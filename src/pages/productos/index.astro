@@ -1,0 +1,162 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { supabase } from "@/lib/supabase";
+import type { Product } from "@/types/product";
+
+let products: Product[] = [];
+let error: string | null = null;
+
+try {
+  const searchQuery = Astro.url.searchParams.get("q");
+  const categoryFilter = Astro.url.searchParams.get("category");
+
+  let query = supabase.from("products").select("*");
+
+  if (searchQuery) {
+    query = query.ilike("name", `%${searchQuery}%`);
+  }
+
+  if (categoryFilter) {
+    query = query.eq("category", categoryFilter);
+  }
+
+  const { data, error: dbError } = await query;
+
+  if (dbError) throw new Error(dbError.message);
+  products = data || [];
+} catch (err) {
+  error =
+    err instanceof Error
+      ? err.message
+      : "Error al cargar los productos. Intenta más tarde.";
+}
+
+const searchQuery = Astro.url.searchParams.get("q") || "";
+const categoryFilter = Astro.url.searchParams.get("category") || "";
+---
+
+<Layout title="Productos">
+  <div class="min-h-screen bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 py-12">
+      <h1 class="text-4xl font-bold text-gray-900 mb-8">Catálogo de Productos</h1>
+
+      {/* Filtros */}
+      <form class="mb-8 bg-white p-6 rounded-lg shadow-sm">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Búsqueda */}
+          <div>
+            <label for="search" class="block text-sm font-medium text-gray-700 mb-2"
+              >Buscar por nombre</label
+            >
+            <input
+              type="text"
+              id="search"
+              name="q"
+              value={searchQuery}
+              placeholder="Ej: laptop, mouse..."
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            />
+          </div>
+
+          {/* Categoría */}
+          <div>
+            <label for="category" class="block text-sm font-medium text-gray-700 mb-2"
+              >Categoría</label
+            >
+            <select
+              id="category"
+              name="category"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            >
+              <option value="">Todas las categorías</option>
+              <option value="Electrónica" selected={categoryFilter === "Electrónica"}
+                >Electrónica</option
+              >
+              <option value="Accesorios" selected={categoryFilter === "Accesorios"}
+                >Accesorios</option
+              >
+              <option value="Ropa" selected={categoryFilter === "Ropa"}
+                >Ropa</option
+              >
+            </select>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="mt-4 w-full md:w-auto px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition"
+        >
+          Buscar
+        </button>
+
+        {(searchQuery || categoryFilter) && (
+          <a
+            href="/productos"
+            class="mt-4 ml-2 inline-block px-6 py-2 bg-gray-300 text-gray-800 font-medium rounded-lg hover:bg-gray-400 transition"
+          >
+            Limpiar filtros
+          </a>
+        )}
+      </form>
+
+      {/* Mensaje de error */}
+      {error && (
+        <div class="mb-8 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+          <p class="font-medium">Error</p>
+          <p>{error}</p>
+        </div>
+      )}
+
+      {/* Mensaje vacío */}
+      {!error && products.length === 0 && (
+        <div class="text-center py-12 bg-white rounded-lg shadow-sm">
+          <p class="text-xl text-gray-600">
+            {searchQuery || categoryFilter
+              ? "No hay productos que coincidan con tu búsqueda"
+              : "No hay productos disponibles"}
+          </p>
+        </div>
+      )}
+
+      {/* Grilla de productos */}
+      {!error && products.length > 0 && (
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {products.map((product) => (
+            <a
+              href={`/productos/${product.id}`}
+              class="group bg-white rounded-lg shadow-sm hover:shadow-lg transition overflow-hidden"
+            >
+              <div class="aspect-square bg-gray-200 overflow-hidden">
+                <img
+                  src={product.image_url}
+                  alt={product.name}
+                  class="w-full h-full object-cover group-hover:scale-105 transition"
+                />
+              </div>
+              <div class="p-4">
+                <h3 class="font-semibold text-gray-900 line-clamp-2">
+                  {product.name}
+                </h3>
+                <p class="text-sm text-gray-600 mt-1">{product.category}</p>
+                <div class="mt-3 flex items-center justify-between">
+                  <span class="text-lg font-bold text-blue-600">
+                    ${product.price.toFixed(2)}
+                  </span>
+                  <span
+                    class={`text-sm font-medium px-2 py-1 rounded ${
+                      product.stock > 0
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {product.stock > 0 ? `Stock: ${product.stock}` : "Agotado"}
+                  </span>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+</Layout>

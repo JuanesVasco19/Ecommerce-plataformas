@@ -1,0 +1,13 @@
+---
+export const prerender = true;
+
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import AuthGuard from '@/components/admin/AuthGuard';
+import ProductsTable from '@/components/admin/ProductsTable';
+---
+
+<AdminLayout title="Dashboard">
+  <AuthGuard client:load>
+    <ProductsTable client:load />
+  </AuthGuard>
+</AdminLayout>

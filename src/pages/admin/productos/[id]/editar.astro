@@ -1,0 +1,33 @@
+---
+export const prerender = false;
+
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import AuthGuard from '@/components/admin/AuthGuard';
+import ProductForm from '@/components/admin/ProductForm';
+import { supabase } from '@/lib/supabase';
+import type { Product } from '@/types/product';
+
+const { id } = Astro.params;
+
+if (!id || isNaN(Number(id))) {
+  return Astro.redirect('/admin');
+}
+
+const { data, error } = await supabase
+  .from('products')
+  .select('*')
+  .eq('id', Number(id))
+  .single();
+
+if (error || !data) {
+  return Astro.redirect('/admin');
+}
+
+const product = data as Product;
+---
+
+<AdminLayout title={`Editar: ${product.name}`}>
+  <AuthGuard client:load>
+    <ProductForm client:load product={product} />
+  </AuthGuard>
+</AdminLayout>

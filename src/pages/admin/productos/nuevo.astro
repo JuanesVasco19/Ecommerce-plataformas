@@ -1,0 +1,13 @@
+---
+export const prerender = true;
+
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import AuthGuard from '@/components/admin/AuthGuard';
+import ProductForm from '@/components/admin/ProductForm';
+---
+
+<AdminLayout title="Nuevo producto">
+  <AuthGuard client:load>
+    <ProductForm client:load />
+  </AuthGuard>
+</AdminLayout>

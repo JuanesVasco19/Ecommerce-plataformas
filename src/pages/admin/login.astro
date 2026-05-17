@@ -1,0 +1,10 @@
+---
+export const prerender = true;
+
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import LoginForm from '@/components/admin/LoginForm';
+---
+
+<BaseLayout title="Iniciar sesión" description="Accede al panel de administración de MiTienda">
+  <LoginForm client:load />
+</BaseLayout>

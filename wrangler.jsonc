@@ -1,0 +1,24 @@
+{
+	"name": "ecommerce-astro",
+	"compatibility_date": "2026-05-17",
+	"compatibility_flags": ["global_fetch_strictly_public"],
+
+	// Entrypoint de Cloudflare Workers (no Pages)
+	"main": "@astrojs/cloudflare/entrypoints/server",
+
+	// Assets estáticos generados por `astro build`
+	"assets": {
+		"directory": "./dist",
+		"binding": "ASSETS"
+	},
+
+	// Variables de entorno — completa los valores o usa `wrangler secret put`
+	"vars": {
+		"PUBLIC_SUPABASE_URL": "",
+		"PUBLIC_SUPABASE_ANON_KEY": ""
+	},
+
+	"observability": {
+		"enabled": true
+	}
+}
