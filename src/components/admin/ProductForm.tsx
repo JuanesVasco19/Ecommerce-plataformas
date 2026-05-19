@@ -22,7 +22,7 @@ interface FieldErrors {
   category?: string;
 }
 
-const CATEGORIES = ['Electrónica', 'Accesorios', 'Ropa', 'Hogar', 'Deportes', 'Otros'];
+const CATEGORIES = ['Electrónica', 'Accesorios', 'Ropa', 'Hogar', 'Libros', 'Deportes', 'Otros'];
 
 const formatPrice = (n: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n);
