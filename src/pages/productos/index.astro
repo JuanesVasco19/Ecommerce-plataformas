@@ -6,10 +6,15 @@ import type { Product } from "@/types/product";
 
 let products: Product[] = [];
 let error: string | null = null;
+let totalCount = 0;
+
+const PAGE_SIZE = 12;
 
 const searchQuery = Astro.url.searchParams.get("q") || "";
 const categoryFilter = Astro.url.searchParams.get("category") || "";
 const sortParam = Astro.url.searchParams.get("sort") || "newest";
+const pageParam = parseInt(Astro.url.searchParams.get("page") || "1", 10);
+const currentPage = Number.isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
 
 const SORT_OPTIONS = {
   newest:       { label: "Más recientes",       column: "created_at", ascending: false },
@@ -23,23 +28,57 @@ type SortKey = keyof typeof SORT_OPTIONS;
 const sortKey: SortKey = (sortParam in SORT_OPTIONS ? sortParam : "newest") as SortKey;
 const sort = SORT_OPTIONS[sortKey];
 
+const from = (currentPage - 1) * PAGE_SIZE;
+const to = from + PAGE_SIZE - 1;
+
 try {
   let query = supabase
     .from("products")
-    .select("*")
-    .order(sort.column, { ascending: sort.ascending });
+    .select("*", { count: "exact" })
+    .order(sort.column, { ascending: sort.ascending })
+    .range(from, to);
   if (searchQuery) query = query.ilike("name", `%${searchQuery}%`);
   if (categoryFilter) query = query.eq("category", categoryFilter);
 
-  const { data, error: dbError } = await query;
+  const { data, error: dbError, count } = await query;
   if (dbError) throw new Error(dbError.message);
   products = data || [];
+  totalCount = count ?? 0;
 } catch (err) {
   error = err instanceof Error ? err.message : "Error al cargar los productos.";
 }
 
 const categories = ["Electrónica", "Accesorios", "Ropa", "Hogar", "Libros"];
 const hasFilters = !!(searchQuery || categoryFilter || sortKey !== "newest");
+
+const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+const safePage = Math.min(currentPage, totalPages);
+const showingFrom = totalCount === 0 ? 0 : from + 1;
+const showingTo = Math.min(from + PAGE_SIZE, totalCount);
+
+const buildPageUrl = (page: number) => {
+  const params = new URLSearchParams();
+  if (searchQuery) params.set("q", searchQuery);
+  if (categoryFilter) params.set("category", categoryFilter);
+  if (sortKey !== "newest") params.set("sort", sortKey);
+  if (page > 1) params.set("page", String(page));
+  const qs = params.toString();
+  return qs ? `/productos?${qs}` : "/productos";
+};
+
+const buildPageRange = (current: number, total: number): (number | "…")[] => {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages: (number | "…")[] = [1];
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  if (start > 2) pages.push("…");
+  for (let i = start; i <= end; i++) pages.push(i);
+  if (end < total - 1) pages.push("…");
+  pages.push(total);
+  return pages;
+};
+
+const pageRange = buildPageRange(safePage, totalPages);
 ---
 
 <BaseLayout title="Catálogo" description="Explora todos los productos disponibles">
@@ -51,8 +90,8 @@ const hasFilters = !!(searchQuery || categoryFilter || sortKey !== "newest");
           Encuentra exactamente lo que buscas
         </h1>
         <p class="mt-4 text-stone-600 text-lg max-w-xl">
-          {products.length > 0
-            ? `${products.length} ${products.length === 1 ? "producto disponible" : "productos disponibles"}`
+          {totalCount > 0
+            ? `${totalCount} ${totalCount === 1 ? "producto disponible" : "productos disponibles"}`
             : "Explora nuestra colección"}
         </p>
       </div>
@@ -192,11 +231,88 @@ const hasFilters = !!(searchQuery || categoryFilter || sortKey !== "newest");
     )}
 
     {!error && products.length > 0 && (
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 stagger">
-        {products.map((product) => (
-          <ProductCard product={product} />
-        ))}
-      </div>
+      <>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 stagger">
+          {products.map((product) => (
+            <ProductCard product={product} />
+          ))}
+        </div>
+
+        {totalPages > 1 && (
+          <nav class="mt-10 flex flex-col sm:flex-row items-center justify-between gap-4" aria-label="Paginación">
+            <p class="text-sm text-stone-600">
+              Mostrando <span class="font-semibold text-stone-900">{showingFrom}</span>–<span class="font-semibold text-stone-900">{showingTo}</span> de <span class="font-semibold text-stone-900">{totalCount}</span>
+            </p>
+
+            <div class="flex items-center gap-1.5">
+              {safePage > 1 ? (
+                <a
+                  href={buildPageUrl(safePage - 1)}
+                  rel="prev"
+                  class="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-stone-200 bg-white text-sm font-medium text-stone-700 hover:border-brand-300 hover:text-brand-700 transition-colors"
+                  aria-label="Página anterior"
+                >
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
+                  <span class="hidden sm:inline">Anterior</span>
+                </a>
+              ) : (
+                <span class="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-stone-200 bg-stone-50 text-sm font-medium text-stone-400 cursor-not-allowed">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
+                  <span class="hidden sm:inline">Anterior</span>
+                </span>
+              )}
+
+              <div class="flex items-center gap-1">
+                {pageRange.map((p) =>
+                  p === "…" ? (
+                    <span class="px-2 text-stone-400 text-sm">…</span>
+                  ) : p === safePage ? (
+                    <span
+                      class="inline-flex items-center justify-center min-w-[2.5rem] h-10 px-3 rounded-lg gradient-brand text-white text-sm font-semibold shadow-glow"
+                      aria-current="page"
+                    >
+                      {p}
+                    </span>
+                  ) : (
+                    <a
+                      href={buildPageUrl(p)}
+                      class="inline-flex items-center justify-center min-w-[2.5rem] h-10 px-3 rounded-lg border border-stone-200 bg-white text-sm font-medium text-stone-700 hover:border-brand-300 hover:text-brand-700 transition-colors"
+                      aria-label={`Ir a página ${p}`}
+                    >
+                      {p}
+                    </a>
+                  )
+                )}
+              </div>
+
+              {safePage < totalPages ? (
+                <a
+                  href={buildPageUrl(safePage + 1)}
+                  rel="next"
+                  class="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-stone-200 bg-white text-sm font-medium text-stone-700 hover:border-brand-300 hover:text-brand-700 transition-colors"
+                  aria-label="Página siguiente"
+                >
+                  <span class="hidden sm:inline">Siguiente</span>
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </a>
+              ) : (
+                <span class="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-stone-200 bg-stone-50 text-sm font-medium text-stone-400 cursor-not-allowed">
+                  <span class="hidden sm:inline">Siguiente</span>
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </span>
+              )}
+            </div>
+          </nav>
+        )}
+      </>
     )}
   </div>
 </BaseLayout>
