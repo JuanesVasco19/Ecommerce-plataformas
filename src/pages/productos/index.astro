@@ -1,162 +1,163 @@
 ---
-import Layout from "@/layouts/Layout.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import ProductCard from "@/components/ProductCard.astro";
 import { supabase } from "@/lib/supabase";
 import type { Product } from "@/types/product";
 
 let products: Product[] = [];
 let error: string | null = null;
 
+const searchQuery = Astro.url.searchParams.get("q") || "";
+const categoryFilter = Astro.url.searchParams.get("category") || "";
+
 try {
-  const searchQuery = Astro.url.searchParams.get("q");
-  const categoryFilter = Astro.url.searchParams.get("category");
-
-  let query = supabase.from("products").select("*");
-
-  if (searchQuery) {
-    query = query.ilike("name", `%${searchQuery}%`);
-  }
-
-  if (categoryFilter) {
-    query = query.eq("category", categoryFilter);
-  }
+  let query = supabase.from("products").select("*").order("created_at", { ascending: false });
+  if (searchQuery) query = query.ilike("name", `%${searchQuery}%`);
+  if (categoryFilter) query = query.eq("category", categoryFilter);
 
   const { data, error: dbError } = await query;
-
   if (dbError) throw new Error(dbError.message);
   products = data || [];
 } catch (err) {
-  error =
-    err instanceof Error
-      ? err.message
-      : "Error al cargar los productos. Intenta más tarde.";
+  error = err instanceof Error ? err.message : "Error al cargar los productos.";
 }
 
-const searchQuery = Astro.url.searchParams.get("q") || "";
-const categoryFilter = Astro.url.searchParams.get("category") || "";
+const categories = ["Electrónica", "Accesorios", "Ropa", "Hogar"];
+const hasFilters = !!(searchQuery || categoryFilter);
 ---
 
-<Layout title="Productos">
-  <div class="min-h-screen bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4 py-12">
-      <h1 class="text-4xl font-bold text-gray-900 mb-8">Catálogo de Productos</h1>
+<BaseLayout title="Catálogo" description="Explora todos los productos disponibles">
+  <section class="relative gradient-mesh border-b border-stone-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
+      <div class="max-w-2xl">
+        <p class="text-sm font-medium text-brand-700">Catálogo</p>
+        <h1 class="mt-2 font-display text-4xl sm:text-5xl font-bold tracking-tight text-stone-900 text-balance">
+          Encuentra exactamente lo que buscas
+        </h1>
+        <p class="mt-4 text-stone-600 text-lg max-w-xl">
+          {products.length > 0
+            ? `${products.length} ${products.length === 1 ? "producto disponible" : "productos disponibles"}`
+            : "Explora nuestra colección"}
+        </p>
+      </div>
+    </div>
+  </section>
 
-      {/* Filtros */}
-      <form class="mb-8 bg-white p-6 rounded-lg shadow-sm">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Búsqueda */}
-          <div>
-            <label for="search" class="block text-sm font-medium text-gray-700 mb-2"
-              >Buscar por nombre</label
-            >
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <form class="bg-white rounded-2xl border border-stone-200 p-5 lg:p-6 shadow-sm mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-3 items-end">
+        <div>
+          <label for="search" class="block text-xs font-semibold text-stone-700 mb-1.5 uppercase tracking-wide">
+            Buscar
+          </label>
+          <div class="relative">
+            <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
             <input
               type="text"
               id="search"
               name="q"
               value={searchQuery}
-              placeholder="Ej: laptop, mouse..."
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              placeholder="Buscar productos..."
+              class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 focus:bg-white transition-all"
             />
-          </div>
-
-          {/* Categoría */}
-          <div>
-            <label for="category" class="block text-sm font-medium text-gray-700 mb-2"
-              >Categoría</label
-            >
-            <select
-              id="category"
-              name="category"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-            >
-              <option value="">Todas las categorías</option>
-              <option value="Electrónica" selected={categoryFilter === "Electrónica"}
-                >Electrónica</option
-              >
-              <option value="Accesorios" selected={categoryFilter === "Accesorios"}
-                >Accesorios</option
-              >
-              <option value="Ropa" selected={categoryFilter === "Ropa"}
-                >Ropa</option
-              >
-            </select>
           </div>
         </div>
 
-        <button
-          type="submit"
-          class="mt-4 w-full md:w-auto px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition"
-        >
-          Buscar
-        </button>
+        <div>
+          <label for="category" class="block text-xs font-semibold text-stone-700 mb-1.5 uppercase tracking-wide">
+            Categoría
+          </label>
+          <select
+            id="category"
+            name="category"
+            class="w-full md:min-w-[200px] px-4 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 focus:bg-white transition-all appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2378716c%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C/svg%3E')] bg-no-repeat bg-[length:18px] bg-[right_0.75rem_center] pr-10"
+          >
+            <option value="">Todas</option>
+            {categories.map((cat) => (
+              <option value={cat} selected={categoryFilter === cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
 
-        {(searchQuery || categoryFilter) && (
+        <div class="flex gap-2">
+          <button
+            type="submit"
+            class="px-5 py-2.5 rounded-xl gradient-brand text-white text-sm font-semibold shadow-glow hover:-translate-y-0.5 transition-all"
+          >
+            Aplicar
+          </button>
+          {hasFilters && (
+            <a
+              href="/productos"
+              class="px-4 py-2.5 rounded-xl border border-stone-200 text-stone-700 text-sm font-medium hover:bg-stone-50 transition-all"
+            >
+              Limpiar
+            </a>
+          )}
+        </div>
+      </div>
+
+      {hasFilters && (
+        <div class="mt-4 flex flex-wrap items-center gap-2 pt-4 border-t border-stone-100">
+          <span class="text-xs text-stone-500 font-medium">Filtros activos:</span>
+          {searchQuery && (
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-50 text-brand-700 text-xs font-medium border border-brand-200">
+              "{searchQuery}"
+            </span>
+          )}
+          {categoryFilter && (
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-50 text-brand-700 text-xs font-medium border border-brand-200">
+              {categoryFilter}
+            </span>
+          )}
+        </div>
+      )}
+    </form>
+
+    {error && (
+      <div class="rounded-2xl bg-red-50 border border-red-200 p-5 flex items-start gap-3">
+        <svg class="w-5 h-5 text-red-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z" />
+        </svg>
+        <div>
+          <p class="font-medium text-red-800">No pudimos cargar los productos</p>
+          <p class="text-sm text-red-700 mt-0.5">{error}</p>
+        </div>
+      </div>
+    )}
+
+    {!error && products.length === 0 && (
+      <div class="text-center py-20 bg-white rounded-2xl border border-dashed border-stone-300">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-stone-100 text-stone-400 mb-4">
+          <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        <h3 class="font-display text-lg font-semibold text-stone-900">Sin resultados</h3>
+        <p class="mt-1 text-sm text-stone-600 max-w-sm mx-auto">
+          {hasFilters
+            ? "No hay productos que coincidan con tu búsqueda. Prueba con otros filtros."
+            : "Aún no hay productos publicados. Vuelve pronto."}
+        </p>
+        {hasFilters && (
           <a
             href="/productos"
-            class="mt-4 ml-2 inline-block px-6 py-2 bg-gray-300 text-gray-800 font-medium rounded-lg hover:bg-gray-400 transition"
+            class="mt-5 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-stone-900 text-white text-sm font-medium hover:bg-stone-800 transition-colors"
           >
             Limpiar filtros
           </a>
         )}
-      </form>
+      </div>
+    )}
 
-      {/* Mensaje de error */}
-      {error && (
-        <div class="mb-8 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-          <p class="font-medium">Error</p>
-          <p>{error}</p>
-        </div>
-      )}
-
-      {/* Mensaje vacío */}
-      {!error && products.length === 0 && (
-        <div class="text-center py-12 bg-white rounded-lg shadow-sm">
-          <p class="text-xl text-gray-600">
-            {searchQuery || categoryFilter
-              ? "No hay productos que coincidan con tu búsqueda"
-              : "No hay productos disponibles"}
-          </p>
-        </div>
-      )}
-
-      {/* Grilla de productos */}
-      {!error && products.length > 0 && (
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {products.map((product) => (
-            <a
-              href={`/productos/${product.id}`}
-              class="group bg-white rounded-lg shadow-sm hover:shadow-lg transition overflow-hidden"
-            >
-              <div class="aspect-square bg-gray-200 overflow-hidden">
-                <img
-                  src={product.image_url}
-                  alt={product.name}
-                  class="w-full h-full object-cover group-hover:scale-105 transition"
-                />
-              </div>
-              <div class="p-4">
-                <h3 class="font-semibold text-gray-900 line-clamp-2">
-                  {product.name}
-                </h3>
-                <p class="text-sm text-gray-600 mt-1">{product.category}</p>
-                <div class="mt-3 flex items-center justify-between">
-                  <span class="text-lg font-bold text-blue-600">
-                    ${product.price.toFixed(2)}
-                  </span>
-                  <span
-                    class={`text-sm font-medium px-2 py-1 rounded ${
-                      product.stock > 0
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {product.stock > 0 ? `Stock: ${product.stock}` : "Agotado"}
-                  </span>
-                </div>
-              </div>
-            </a>
-          ))}
-        </div>
-      )}
-    </div>
+    {!error && products.length > 0 && (
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 stagger">
+        {products.map((product) => (
+          <ProductCard product={product} />
+        ))}
+      </div>
+    )}
   </div>
-</Layout>
+</BaseLayout>

@@ -6,7 +6,10 @@ interface Props {
   description?: string;
 }
 
-const { title, description = 'Panel de Administración - MiTienda' } = Astro.props;
+const { title, description = 'Panel de Administración — MiTienda' } = Astro.props;
+const pathname = Astro.url.pathname;
+const isActive = (href: string) =>
+  href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
 ---
 
 <!doctype html>
@@ -18,57 +21,123 @@ const { title, description = 'Panel de Administración - MiTienda' } = Astro.pro
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" />
     <meta name="generator" content={Astro.generator} />
-    <title>{title} | Admin - MiTienda</title>
+    <meta name="theme-color" content="#0a0a0a" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+    />
+
+    <title>{title} · Admin</title>
   </head>
-  <body class="min-h-screen bg-gray-100">
+  <body class="min-h-screen bg-stone-100 antialiased">
     <div class="flex h-screen overflow-hidden">
-      <aside class="w-64 bg-gray-900 text-white flex flex-col shrink-0">
-        <div class="px-6 py-5 border-b border-gray-700">
-          <a href="/" class="text-xl font-bold text-white hover:text-indigo-300 transition-colors">
-            MiTienda
+      <aside class="hidden md:flex w-64 bg-neutral-950 text-stone-200 flex-col shrink-0 border-r border-neutral-900">
+        <div class="px-6 py-6 border-b border-neutral-900">
+          <a href="/" class="flex items-center gap-2.5 group">
+            <span class="inline-flex items-center justify-center w-9 h-9 rounded-xl gradient-brand shadow-glow">
+              <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9m-9-9v9m4-9v9" />
+              </svg>
+            </span>
+            <div>
+              <p class="font-display text-base font-bold tracking-tight text-white leading-tight">MiTienda</p>
+              <p class="text-[11px] text-neutral-500 leading-tight">Panel admin</p>
+            </div>
           </a>
-          <p class="text-xs text-gray-400 mt-0.5">Panel de Administración</p>
         </div>
 
-        <nav class="flex-1 px-4 py-6 space-y-1">
+        <nav class="flex-1 px-3 py-5 space-y-1">
+          <p class="px-3 py-2 text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">General</p>
           <a
             href="/admin"
-            class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors text-sm font-medium"
+            class:list={[
+              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
+              isActive('/admin') && pathname === '/admin'
+                ? 'bg-brand-600/15 text-brand-300 ring-1 ring-brand-500/30'
+                : 'text-neutral-400 hover:bg-neutral-900 hover:text-white',
+            ]}
           >
+            <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
             Dashboard
           </a>
           <a
-            href="/admin/productos"
-            class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors text-sm font-medium"
+            href="/admin/productos/nuevo"
+            class:list={[
+              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
+              pathname.includes('/productos/nuevo') || pathname.includes('/editar')
+                ? 'bg-brand-600/15 text-brand-300 ring-1 ring-brand-500/30'
+                : 'text-neutral-400 hover:bg-neutral-900 hover:text-white',
+            ]}
           >
-            Productos
+            <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Nuevo producto
+          </a>
+
+          <p class="px-3 pt-6 pb-2 text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">Tienda pública</p>
+          <a
+            href="/"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-400 hover:bg-neutral-900 hover:text-white transition-all"
+          >
+            <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Ver sitio
           </a>
         </nav>
 
-        <div class="px-4 py-4 border-t border-gray-700">
+        <div class="px-3 py-4 border-t border-neutral-900">
           <button
             id="logout-btn"
-            class="w-full px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-gray-800 rounded-lg transition-colors text-left font-medium"
+            class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-neutral-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg transition-all"
           >
+            <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
             Cerrar sesión
           </button>
         </div>
       </aside>
 
       <div class="flex-1 flex flex-col overflow-hidden">
-        <main class="flex-1 overflow-y-auto p-8">
-          <slot />
+        <header class="md:hidden flex items-center justify-between px-4 h-14 bg-neutral-950 text-white border-b border-neutral-900">
+          <a href="/admin" class="flex items-center gap-2">
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg gradient-brand">
+              <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4" />
+              </svg>
+            </span>
+            <span class="font-display font-bold tracking-tight">Admin</span>
+          </a>
+          <button
+            id="logout-btn-mobile"
+            class="text-xs px-3 py-1.5 rounded-md text-red-300 border border-red-500/30"
+          >
+            Salir
+          </button>
+        </header>
+        <main class="flex-1 overflow-y-auto scrollbar-thin">
+          <div class="max-w-6xl mx-auto px-6 lg:px-10 py-8 lg:py-10">
+            <slot />
+          </div>
         </main>
       </div>
     </div>
+
+    <script>
+      import { supabase } from '@/lib/supabase';
+      const logout = async () => {
+        await supabase.auth.signOut();
+        window.location.href = '/admin/login';
+      };
+      document.getElementById('logout-btn')?.addEventListener('click', logout);
+      document.getElementById('logout-btn-mobile')?.addEventListener('click', logout);
+    </script>
   </body>
 </html>
-
-<script>
-  import { supabase } from '@/lib/supabase';
-
-  document.getElementById('logout-btn')?.addEventListener('click', async () => {
-    await supabase.auth.signOut();
-    window.location.href = '/admin/login';
-  });
-</script>

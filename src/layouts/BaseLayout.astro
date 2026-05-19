@@ -6,8 +6,11 @@ interface Props {
   description?: string;
 }
 
-const { title, description = 'MiTienda - Tu tienda online' } = Astro.props;
+const { title, description = 'MiTienda — diseño moderno para tu próxima compra' } = Astro.props;
 const year = new Date().getFullYear();
+const pathname = Astro.url.pathname;
+const isActive = (href: string) =>
+  href === '/' ? pathname === '/' : pathname.startsWith(href);
 ---
 
 <!doctype html>
@@ -19,29 +22,90 @@ const year = new Date().getFullYear();
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" />
     <meta name="generator" content={Astro.generator} />
-    <title>{title} | MiTienda</title>
+    <meta name="theme-color" content="#fafaf9" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+    />
+
+    <title>{title} · MiTienda</title>
   </head>
-  <body class="min-h-screen flex flex-col bg-gray-50">
-    <header class="bg-white shadow-sm border-b border-gray-200">
+  <body class="min-h-screen flex flex-col antialiased">
+    <header class="sticky top-0 z-40 glass border-b border-stone-200/60">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
-          <a href="/" class="text-xl font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
-            MiTienda
+          <a
+            href="/"
+            class="group flex items-center gap-2.5"
+            aria-label="MiTienda — inicio"
+          >
+            <span class="relative inline-flex items-center justify-center w-9 h-9 rounded-xl gradient-brand shadow-glow">
+              <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9m-9-9v9m4-9v9" />
+              </svg>
+            </span>
+            <span class="font-display text-xl font-bold tracking-tight text-stone-900 group-hover:gradient-brand-text transition-colors">
+              MiTienda
+            </span>
           </a>
-          <nav class="flex gap-6">
+
+          <nav class="hidden md:flex items-center gap-1" aria-label="Principal">
+            <a
+              href="/"
+              class:list={[
+                'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                isActive('/') && pathname === '/'
+                  ? 'text-brand-700 bg-brand-50'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100',
+              ]}
+            >
+              Inicio
+            </a>
             <a
               href="/productos"
-              class="text-gray-600 hover:text-indigo-600 font-medium transition-colors"
+              class:list={[
+                'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                isActive('/productos')
+                  ? 'text-brand-700 bg-brand-50'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100',
+              ]}
             >
-              Productos
+              Catálogo
             </a>
             <a
               href="/admin"
-              class="text-gray-600 hover:text-indigo-600 font-medium transition-colors"
+              class:list={[
+                'ml-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                isActive('/admin')
+                  ? 'gradient-brand text-white shadow-glow'
+                  : 'border border-stone-200 text-stone-700 hover:border-brand-300 hover:text-brand-700',
+              ]}
             >
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 11c1.66 0 3-1.34 3-3S13.66 5 12 5 9 6.34 9 8s1.34 3 3 3zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+              </svg>
               Admin
             </a>
           </nav>
+
+          <button
+            id="mobile-menu-btn"
+            class="md:hidden p-2 rounded-lg text-stone-700 hover:bg-stone-100 transition-colors"
+            aria-label="Abrir menú"
+          >
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </div>
+
+        <div id="mobile-menu" class="hidden md:hidden pb-4 space-y-1 animate-fade-in-up">
+          <a href="/" class="block px-4 py-2.5 rounded-lg text-sm font-medium text-stone-700 hover:bg-stone-100">Inicio</a>
+          <a href="/productos" class="block px-4 py-2.5 rounded-lg text-sm font-medium text-stone-700 hover:bg-stone-100">Catálogo</a>
+          <a href="/admin" class="block px-4 py-2.5 rounded-lg text-sm font-medium gradient-brand text-white">Admin</a>
         </div>
       </div>
     </header>
@@ -50,10 +114,62 @@ const year = new Date().getFullYear();
       <slot />
     </main>
 
-    <footer class="bg-white border-t border-gray-200 py-6 mt-auto">
-      <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
-        &copy; {year} MiTienda. Todos los derechos reservados.
+    <footer class="mt-20 border-t border-stone-200 bg-stone-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-10">
+          <div class="col-span-2">
+            <div class="flex items-center gap-2.5 mb-4">
+              <span class="inline-flex items-center justify-center w-9 h-9 rounded-xl gradient-brand">
+                <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9m-9-9v9m4-9v9" />
+                </svg>
+              </span>
+              <span class="font-display text-xl font-bold tracking-tight">MiTienda</span>
+            </div>
+            <p class="text-sm text-stone-600 max-w-sm leading-relaxed">
+              Productos cuidadosamente seleccionados, entregados con la rapidez que mereces. Diseño, calidad y servicio.
+            </p>
+          </div>
+
+          <div>
+            <h3 class="font-display font-semibold text-stone-900 mb-4 text-sm">Tienda</h3>
+            <ul class="space-y-2.5 text-sm text-stone-600">
+              <li><a href="/productos" class="hover:text-brand-700 transition-colors">Catálogo</a></li>
+              <li><a href="/productos?category=Electrónica" class="hover:text-brand-700 transition-colors">Electrónica</a></li>
+              <li><a href="/productos?category=Accesorios" class="hover:text-brand-700 transition-colors">Accesorios</a></li>
+              <li><a href="/productos?category=Ropa" class="hover:text-brand-700 transition-colors">Ropa</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="font-display font-semibold text-stone-900 mb-4 text-sm">Cuenta</h3>
+            <ul class="space-y-2.5 text-sm text-stone-600">
+              <li><a href="/admin/login" class="hover:text-brand-700 transition-colors">Iniciar sesión</a></li>
+              <li><a href="/admin" class="hover:text-brand-700 transition-colors">Panel admin</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="mt-12 pt-6 border-t border-stone-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p class="text-xs text-stone-500">&copy; {year} MiTienda. Todos los derechos reservados.</p>
+          <div class="flex items-center gap-4">
+            <span class="text-xs text-stone-500">Hecho con Astro + Cloudflare</span>
+            <span class="inline-flex items-center gap-1.5 text-xs text-stone-500">
+              <span class="relative flex w-2 h-2">
+                <span class="absolute inline-flex w-full h-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
+                <span class="relative inline-flex w-2 h-2 rounded-full bg-emerald-500"></span>
+              </span>
+              Todo operativo
+            </span>
+          </div>
+        </div>
       </div>
     </footer>
+
+    <script>
+      const btn = document.getElementById('mobile-menu-btn');
+      const menu = document.getElementById('mobile-menu');
+      btn?.addEventListener('click', () => menu?.classList.toggle('hidden'));
+    </script>
   </body>
 </html>
